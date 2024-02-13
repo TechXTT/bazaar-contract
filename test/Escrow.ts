@@ -14,6 +14,8 @@ import {
 
     const orderId1 = '0x3165636239313538326132363433353762656666376536303639313464386638';
     const orderId2 = '0x3739383233303838353162623431303862336263663130663362303537373039';
+    const orderId3 = '0x3131366166613135613931383438356538353836636638643632303034396430';
+    const orderId4 = '0x3936633137313765613530623436326139333961666339313535343764303762';
 
     before(async () => {
         Escrow = await ethers.getContractFactory("Escrow");
@@ -36,6 +38,9 @@ import {
     })
     it('- Should revert if the recieverAddress is the zero address', async () => {
         await expect(escrow.connect(buyerAddress).createOrder(orderId1, '0x0', 1, { value: ethers.parseUnits('50', 'wei')})).to.be.revertedWith('Invalid receiver address')
+    })
+    it('- Should revert if the Buyer and the receiver are the same', async () => {
+        await expect(escrow.connect(buyerAddress).createOrder(orderId1, buyerAddress, 1, { value: ethers.parseUnits('50', 'wei')})).to.be.revertedWith('Buyer and receiver cannot be the same')
     })
     it('- Should revert if the amount is 0', async () => {
         await expect(escrow.connect(buyerAddress).createOrder(orderId1, sellerAddress, 1, { value: ethers.parseUnits('0', 'wei')})).to.be.revertedWith('Amount must be greater than 0')
@@ -73,5 +78,39 @@ import {
     it('- Should revert if the order is already completed', async () => {
         await expect(escrow.connect(sellerAddress).claimOrder(orderId1)).to.be.revertedWith('Order already completed')
     })
+
+    it('------------------------Data Fetching------------------------', async () => {})
+    it('+ Shoulf get the order', async () => {
+        const orderIds = await escrow.getUserIncompleteOrders(buyerAddress)
+        expect(orderIds.length).to.equal(1)
+        expect(orderIds[0]).to.equal(orderId2)
+    })
+    it('+ Shoulf get the order', async () => {
+        const orderIds = await escrow.getUserCompleteOrders(sellerAddress)
+        expect(orderIds.length).to.equal(1)
+        expect(orderIds[0]).to.equal(orderId1)
+    })
+
+    it('------------------------Refunded------------------------', async () => {})
+    it('- Should revert if the order does not exist', async () => {
+        await expect(escrow.connect(buyerAddress).refundOrder('0x0')).to.be.revertedWith('Order ID does not exist')
+    })
+    it('- Should revert if the caller is not the receiver', async () => {
+        await expect(escrow.connect(sellerAddress).refundOrder(orderId2)).to.be.revertedWith('Only receiver can refund')
+    })
+    it('- Should revert if the order is already completed', async () => {
+        await expect(escrow.connect(sellerAddress).refundOrder(orderId1)).to.be.revertedWith('Order already completed')
+    })
+    it('+ Should refund the order', async () => {
+        await escrow.connect(buyerAddress).createOrder(orderId3, sellerAddress, 1, { value: ethers.parseUnits('50', 'wei')})
+
+        const buyerBalance = await ethers.provider.getBalance(buyerAddress.address)
+        await escrow.connect(buyerAddress).refundOrder(orderId2)
+        const order = await escrow.orders(orderId2)
+        expect(order.completed).to.equal(true)
+        const newBuyerBalance = await ethers.provider.getBalance(buyerAddress.address)
+        expect(newBuyerBalance).to.gt(buyerBalance)
+    })
+    
   });
   

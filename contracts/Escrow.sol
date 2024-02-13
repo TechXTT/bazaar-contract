@@ -2,12 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-
-contract Escrow is AccessControl {
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
+contract Escrow {
 
     struct Order {
         address buyer;
@@ -30,7 +25,7 @@ contract Escrow is AccessControl {
     function releaseOrder(bytes32 orderId) external {
         require(orders[orderId].buyer != address(0), "Order ID does not exist");
         Order storage orderInfo = orders[orderId];
-        require(hasRole(getRoleAdmin(DEFAULT_ADMIN_ROLE), _msgSender()), "Only admin can release");
+        require(orderInfo.buyer == msg.sender, "Only buyer can release");
         require(!orderInfo.release, "Order already released");
 
         orderInfo.release = true;
@@ -40,7 +35,7 @@ contract Escrow is AccessControl {
     function refundOrder(bytes32 orderId) external {
         require(orders[orderId].buyer != address(0), "Order ID does not exist");
         Order storage orderInfo = orders[orderId];
-        require(hasRole(getRoleAdmin(DEFAULT_ADMIN_ROLE), _msgSender()), "Only admin can refund");
+        require(orderInfo.receiver == msg.sender, "Only receiver can refund");
         require(!orderInfo.completed, "Order already completed");
 
         orderInfo.completed = true;
