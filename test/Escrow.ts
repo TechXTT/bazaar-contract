@@ -80,12 +80,12 @@ import {
     })
 
     it('------------------------Data Fetching------------------------', async () => {})
-    it('+ Shoulf get the order', async () => {
+    it('+ Should get the order', async () => {
         const orderIds = await escrow.getUserIncompleteOrders(buyerAddress)
         expect(orderIds.length).to.equal(1)
         expect(orderIds[0]).to.equal(orderId2)
     })
-    it('+ Shoulf get the order', async () => {
+    it('+ Should get the order', async () => {
         const orderIds = await escrow.getUserCompleteOrders(sellerAddress)
         expect(orderIds.length).to.equal(1)
         expect(orderIds[0]).to.equal(orderId1)
